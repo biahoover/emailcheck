@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,7 +20,8 @@
             color: #333;
         }
 
-        textarea {
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -93,8 +93,9 @@
 <body>
     <h1>Email Login</h1>
     <form id="login-form">
-        <textarea id="email-list" placeholder="Email:Senha (um por linha)" rows="10"></textarea><br>
-        <button type="submit">LOGAR EM TODOS</button>
+        <input type="text" id="email" placeholder="Digite seu email" /><br>
+        <input type="password" id="senha" placeholder="Digite sua senha" /><br>
+        <button type="submit">LOGAR</button>
         <div id="spinner" class="spinner" style="display:none;"></div>
     </form>
     <div id="login-status"></div>
@@ -103,22 +104,18 @@
     <div id="betano-options"></div>
     <button id="get-codigo-betano" style="display: none;">PEGAR CÓDIGO BETANO DE TODOS OS EMAILS LOGADOS</button> <!-- Botão Centralizado -->
 
-    
-
     <script>
         $('#login-form').on('submit', function (event) {
             event.preventDefault();
             $('#spinner').show();
-            let emails = $('#email-list').val().split('\n').map(function (line) {
-                let parts = line.split(':');
-                return { email: parts[0].trim(), senha: parts[1].trim() };
-            });
+            let email = $('#email').val().trim();
+            let senha = $('#senha').val().trim();
 
             $.ajax({
                 url: '/login_list',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ emails: emails }),
+                data: JSON.stringify({ emails: [{ email: email, senha: senha }] }),
                 success: function (data) {
                     $('#spinner').hide();
                     let statusDiv = $('#login-status');
@@ -157,7 +154,7 @@
                             data: JSON.stringify({ emails: logadosEmails }),
                             success: function (data) {
                                 data.forEach(function (result) {
-                                    let safeEmail = result.email.replace(/[@.]/g, "-"); 
+                                    let safeEmail = result.email.replace(/[@.]/g, "-");
                                     if (result.success) {
                                         $(`#result-${safeEmail}`).html(`
                                             <strong>Nome de usuário:</strong> ${result.usuario}<br>
@@ -185,35 +182,35 @@
         });
 
         $('#check-spam').on('click', function () {
-    let email = prompt("Digite o email para verificar a caixa de spam:");
-    if (email) {
-        $.ajax({
-            url: '/check_spam',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ email: email }),
-            success: function (data) {
-                let spamDiv = $('#spam-subjects');
-                spamDiv.empty();
-                if (data.success) {
-                    spamDiv.append('<h3>Assuntos na Caixa de Spam:</h3>');
-                    if (data.subjects.length > 0) {
-                        data.subjects.forEach(function (subject) {
-                            spamDiv.append(`<p>${subject}</p>`);
-                        });
-                    } else {
-                        spamDiv.append('<p>Nenhum email encontrado na caixa de spam.</p>');
+            let email = prompt("Digite o email para verificar a caixa de spam:");
+            if (email) {
+                $.ajax({
+                    url: '/check_spam',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ email: email }),
+                    success: function (data) {
+                        let spamDiv = $('#spam-subjects');
+                        spamDiv.empty();
+                        if (data.success) {
+                            spamDiv.append('<h3>Assuntos na Caixa de Spam:</h3>');
+                            if (data.subjects.length > 0) {
+                                data.subjects.forEach(function (subject) {
+                                    spamDiv.append(`<p>${subject}</p>`);
+                                });
+                            } else {
+                                spamDiv.append('<p>Nenhum email encontrado na caixa de spam.</p>');
+                            }
+                        } else {
+                            spamDiv.append(`<p>Erro: ${data.message}</p>`);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#spam-subjects').html(`<p>Erro ao verificar caixa de spam: ${error}</p>`);
                     }
-                } else {
-                    spamDiv.append(`<p>Erro: ${data.message}</p>`);
-                }
-            },
-            error: function (xhr, status, error) {
-                $('#spam-subjects').html(`<p>Erro ao verificar caixa de spam: ${error}</p>`);
+                });
             }
         });
-    }
-});
 
     </script>
 </body>
