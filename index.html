@@ -1,99 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Simples</title>
+    <title>Email Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-        }
-        .login-container {
-            background-color: #fff;
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
+
+        h1,
+        h2 {
+            color: #333;
         }
-        input[type="text"], input[type="password"] {
+
+        textarea {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
+            margin-bottom: 20px;
         }
+
         button {
-            width: 100%;
-            padding: 10px;
             background-color: #007bff;
-            color: #fff;
+            color: white;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
+
         button:hover {
             background-color: #0056b3;
         }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .status-message {
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
-            display: none;
         }
+
         .success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
         .error {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        .codigo-result {
+            margin-top: 5px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
+
 <body>
-    <div class="login-container">
-        <h1>Login</h1>
-        <input type="text" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Senha">
-        <button onclick="login()">Entrar</button>
-        <div id="login-status" class="status-message"></div>
-    </div>
+    <h1>Email Login</h1>
+    <form id="login-form">
+        <textarea id="email-list" placeholder="Email:Senha (um por linha)" rows="10"></textarea><br>
+        <button type="submit">LOGAR EM TODOS</button>
+        <div id="spinner" class="spinner" style="display:none;"></div>
+    </form>
+    <div id="login-status"></div>
+
+    <h2>Obter Código Betano</h2>
+    <div id="betano-options"></div>
+    <button id="get-codigo-betano" style="display: none;">PEGAR CÓDIGO BETANO DE TODOS OS EMAILS LOGADOS</button> <!-- Botão Centralizado -->
 
     <script>
-        function login() {
-            // Credenciais pré-definidas (NÃO SEGURO)
-            const emailValido = "user@example.com";
-            const senhaValida = "password123";
+        $('#login-form').on('submit', function (event) {
+            event.preventDefault();
+            $('#spinner').show();
+            let emails = $('#email-list').val().split('\n').map(function (line) {
+                let parts = line.split(':');
+                return { email: parts[0].trim(), senha: parts[1].trim() };
+            });
 
-            // Obter os valores inseridos pelo usuário
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            // Simulando login
+            let simulatedResults = emails.map(function (account) {
+                // Simulando sucesso de login para todos os emails
+                return {
+                    email: account.email,
+                    success: true,
+                    message: `Email ${account.email} logado com sucesso!`
+                };
+            });
 
-            const statusMessage = document.getElementById('login-status');
+            $('#spinner').hide();
+            let statusDiv = $('#login-status');
+            statusDiv.empty();
+            let betanoDiv = $('#betano-options');
+            betanoDiv.empty();
 
-            // Verificar se as credenciais estão corretas
-            if (email === emailValido && password === senhaValida) {
-                statusMessage.textContent = "Login bem-sucedido!";
-                statusMessage.className = "status-message success";
+            const logados = simulatedResults.filter(result => result.success);
+            const logadosEmails = logados.map(result => result.email);
+
+            logados.forEach(function (result) {
+                statusDiv.append(`
+                    <div class="status-message success">
+                        <i class="fas fa-check-circle"></i> ${result.message}
+                    </div>
+                `);
+                betanoDiv.append(`
+                    <div class="status-message success">
+                        <p><i class="fas fa-envelope"></i> Email ${result.email} LOGADO</p>
+                        <p class="codigo-result" id="result-${result.email.replace(/[@.]/g, "-")}"></p>
+                    </div>
+                `);
+            });
+
+            if (logados.length > 0) {
+                $('#get-codigo-betano').show();
             } else {
-                statusMessage.textContent = "Email ou senha incorretos.";
-                statusMessage.className = "status-message error";
+                $('#get-codigo-betano').hide();
             }
 
-            // Exibir a mensagem de status
-            statusMessage.style.display = "block";
-        }
+            $('#get-codigo-betano').on('click', function () {
+                logadosEmails.forEach(function (email) {
+                    let safeEmail = email.replace(/[@.]/g, "-");
+                    $(`#result-${safeEmail}`).html(`
+                        <strong>Nome de usuário:</strong> Usuario-${safeEmail}<br>
+                        <strong>Código de ativação:</strong> Codigo-${Math.floor(Math.random() * 100000)}
+                    `);
+                });
+            });
+        });
     </script>
 </body>
+
 </html>
